@@ -1,7 +1,9 @@
 from tkinter import *
 from tkinter import messagebox
 from random import choice, randint, shuffle
+from cv2 import meanShift
 import pyperclip
+import json
 
 # Password generator
 def generate_pass():
@@ -36,20 +38,63 @@ def save_password():
     email = email_input.get()
     password = password_input.get()
 
+    new_data = {
+        website:{
+            'email': email,
+            'password': password
+        }
+    }
+
     if len(website) == 0 or len(password) == 0:
         messagebox.showinfo(title="Error", message="Fields cannot be blank")
     else:
-        # display message with data entered
-        is_ok = messagebox.askokcancel(title=website, message=f"These are the details entered: \nEmail: {email}, \nPassword: {password} \n Save?")
-
-        if is_ok:
+        try:
             #open and write inptus to a file
-            with open('data.txt', 'a') as data_file:
-                data_file.write(f'{website} | {email} | {password}\n')
+            with open('data.json', "r") as data_file:
+                # read old data
+                data = json.load(data_file)
+            #catch error if file doesnt exist
+        except FileNotFoundError:
+            with open('data.json', 'w') as data_file:
+                #write new data
+                json.dump(new_data, data_file, indent=4)
+        else:     
+            #updating old data with new data
+            data.update(new_data)
+            #write new data to the existing file
+            with open('data.json', 'w') as data_file:
+                json.dump(data, data_file, indent=4)
+        finally:
+            #clear inputs after saving data
+            website_input.delete(0, END)
+            password_input.delete(0, END)
 
-                #clear inputs after saving data
-                website_input.delete(0, END)
-                password_input.delete(0, END)
+
+# find website password
+
+def search_password():
+    #get data from input
+    website = website_input.get()
+    try:
+    #open data file
+        with open('data.json')as data_file:
+            data = json.load(data_file)
+            if website in data:
+                #extract "email" value from data file
+                email = data[website]["email"]
+                #extract "passwrd" value from data file
+                password = data[website]["password"]
+                #display info message with the data from the data.json file IF it exists
+                messagebox.showinfo(title="Search result", message=f"email: {email} \npassword: a{password}")
+            else:
+                #display error message for non existing query
+                messagebox.showinfo(title="Error", message="no results found")
+        website_input.focus()
+    # catch error exception if file has not been created 
+    except FileNotFoundError:
+        #display erorr message with instructions
+        messagebox.showinfo(title="Error", message="No data available, add the password first")
+
 
 # UI Setup #
 
@@ -60,7 +105,7 @@ window.title("Password manager")
 #img setup
 canvas = Canvas(width=200, height=200)      
 canvas.pack(padx=50,pady=50)
-img = PhotoImage(file="path")     
+img = PhotoImage(file="password.png")     
 canvas.create_image(100, 100, image=img)
 canvas.grid(row=0, column=1)
 
@@ -79,12 +124,12 @@ password_label.grid(row=3, column=0)
 ##inputs
 
 # website address input
-website_input = Entry(width=35)
-website_input.grid(row=1, column=1, columnspan=2)
+website_input = Entry(width=21)
+website_input.grid(row=1, column=1)
 website_input.focus()
 
 # email address input
-email_input = Entry(width=35)
+email_input = Entry(width=38)
 email_input.grid(row=2, column=1, columnspan=2)
 email_input.insert(INSERT, 'sebastians9876@gmail.com')
 
@@ -93,12 +138,18 @@ password_input.grid(row=3, column=1)
 
 #buttons 
 
+#search website password button
+search_button = Button(text="Search", width=13, command=search_password)
+search_button.grid(row=1, column=2, columnspan=2)
+
 # button used for generating a password
-generate_pass_button = Button(text="Generate", command=generate_pass)
+generate_pass_button = Button(text="Generate password", command=generate_pass)
 generate_pass_button.grid(row=3, column=2)
 
 # button used for submiting data
 add_button = Button(text="Add", width=35, command=save_password)
 add_button.grid(row=4, column=1, columnspan=2)
+
+
 
 window.mainloop()
