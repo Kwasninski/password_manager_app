@@ -131,7 +131,7 @@ website_input.focus()
 # email address input
 email_input = Entry(width=38)
 email_input.grid(row=2, column=1, columnspan=2)
-email_input.insert(INSERT, 'sebastians9876@gmail.com')
+email_input.insert(INSERT, 'your default email address')
 
 password_input = Entry(width=21)
 password_input.grid(row=3, column=1)
